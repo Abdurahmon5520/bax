@@ -1,120 +1,173 @@
-import React, {useEffect} from 'react';
-import AdminLayout from "../components/AdminLayout";
-import {updateState, saveMenu, getMenus, deleteMenu, getMainMenus} from "../redux/actions/menusActions";
-import {connect} from "react-redux";
-import {Modal, ModalBody, ModalFooter, ModalHeader} from "reactstrap";
-import {AvForm, AvField} from "availity-reactstrap-validation"
+import React, { useEffect } from 'react';
+import AdminLayout from '../components/AdminLayout';
+// eslint-disable-next-line no-unused-vars
+import { Modal, ModalBody, ModalFooter, ModalHeader } from 'reactstrap';
+import { AvField, AvForm } from 'availity-reactstrap-validation';
+import { connect } from 'react-redux';
+// eslint-disable-next-line no-unused-vars
+import { setState, saveNews, savFile, getNews, deleteNews } from '../redux/actions/newsAction';
+import { getSubMenus } from '../redux/actions/menusActions';
+import { get } from 'lodash';
+import { API_PATH } from '../tools/constants';
+
+
 
 
 const AdminNews = (props) => {
-    // console.log(props)
+    
+    useEffect(() => {
+        props.getSubMenus();
+        props.getNews();
+    }, []);
 
-    useEffect( () => {
-        props.getMenus();
-        props.getMainMenus();
-    }, [])
 
     const generateUrl = (text) => text.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
+    const changeInput = (e) => {
+        console.log(e.target.files);
+        let data = new FormData();
+        data.append("file", e.target.files[0])
+        props.savFile(data);
+        console.log(e.target.files[0]);
+    }
+
     return (
-        <AdminLayout history={props.history}>
-            <button type="button" className="btn btn-danger d-block ml-auto" onClick={ () => props.updateState({open: !props.open})}>Add</button>
+            <AdminLayout history = {props.history}>
+                <button type="button" className="btn-success btn d-block ml-auto"
+                onClick={() => props.setState({open: true})}>
+                  Add 
+                </button>
 
-            <table className="table table-striped table-hover">
-                <thead>
-                <tr>
-                    <th>№</th>
-                    <th>Name (uz)</th>
-                    <th>Name (ru)</th>
-                    <th>Name (en)</th>
-                    <th>URL</th>
-                    <th>Submenu</th>
-                    <th>ParentMenu</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody>
-                {
-                    props.menus.map( (item, index) => {
-                         return (
-                             <tr>
-                                 <td>{index + 1}</td>
-                                 <td>{item.nameUz}</td>
-                                 <td>{item.nameRu}</td>
-                                 <td>{item.nameEn}</td>
-                                 <td>{item.url}</td>
-                                 <td>{item.submenu ? "Submenu" : "Submenu emas"}</td>
-                                 <td>{item.parentMenuName}</td>
-                                 <td>
-                                     <button type="button" className="btn btn-primary mr-2" onClick={() => props.updateState({open: true, selectedItem: item, url: item.url, submenu: item.submenu})}>Edit</button>
+                <div className="row">
+                {props.news.map((item, index) => {
+                    return (
+                        <div className="col-4 mt-3 ">
+                            <div className="card">
+                                <div className="card-header">
+                                    <h5>{item.titleUZ}</h5>
+                                </div>
+                                <div className="card-body">
+                                    <img src={API_PATH + "file/get/" + item.photo.id} className="w-100" alt=""/>
+                                    <p>{item.descriptionUz}</p>
+                                    <p>Menu: <b>{item.menu.nameUz}</b></p>
+                                </div>
+                                <div className="card-footer d-flex justify-content-between">
+                                    <button  className="btn btn-primary">
+                                       Edit
+                                    </button>
+                                    <button className="btn btn-danger" onClick={() => props.setState({deleteModal: true, selectedIndex: item.id})}>
+                                       Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })}
+                </div>
 
-                                     <button type="button" className="btn btn-danger" onClick={() => props.updateState({deleteModal: true, selectedIndex: item.id})}>Delete</button>
-                                 </td>
-                             </tr>
-                         )
-                    })
-                }
-                </tbody>
-            </table>
-
-            <Modal isOpen={props.open} toggle={ () => props.updateState({open: false, submenu: false})}>
-                <AvForm onSubmit={props.saveMenu} model={props.selectedItem}>
+                <Modal isOpen={props.open} toggle={() => props.setState({open: false})}>
+                    <AvForm onSubmit={props.saveNews}>
+                    
                     <ModalBody>
-                        {props.selectedItem.id ?
-                            <AvField name="id" type="text" className="d-none"/> : ""
-                        }
-                        <AvField name="nameUz" type="text" onChange={ (e) => props.updateState({url: generateUrl(e.target.value)})} label="Name (uz)" required/>
-                        <AvField name="nameRu" type="text" label="Name (ru)" required/>
-                        <AvField name="nameEn" type="text" label="Name (en)" required/>
+                        <AvField
+                        name="tittleUz"
+                        type="text"
+                        required
+                        label="Tittle (UZ)"
+                        onChange={(e) => props.setState({url: generateUrl(e.target.value)})}
+                        />
+                        <AvField
+                        name="tittleRu"
+                        type="text"
+                        required
+                        label="Tittle (RU)"
+                        />
+                        <AvField
+                        name="tittleEn"
+                        type="text"
+                        required
+                        label="Tittle (EN)"
+                        /> 
+                        <AvField
+                        name="url"
+                        type="text"
+                        required
+                        label="Url"
+                        value={props.url}
+                        />
+                        <AvField
+                        name="descriptionUz"
+                        type="textarea"
+                        required
+                        label="Description (UZ)"
+                        />
+                        <AvField
+                        name="descriptionRu"
+                        type="textarea"
+                        required
+                        label="Description (RU)"
+                        />
+                        <AvField
+                        name="descriptionEn"
+                        type="textarea"
+                        required
+                        label="Description (EN)"
+                        />
+                          <AvField
+                          name="menu"
+                          type="select"
+                          required>
+                            <option>
+                                Choose menu
+                            </option>
+                            {props.subMenus.map((item, index) => {
+                                return (
+                                    <option value={item.id}>{item.nameUz}</option>
+                                )
+                            })}
+                          </AvField>  
+                        
+                            <input className=""
+                            type="file" accept=".png, .svg, .jpg, .jpeg" onChange={changeInput}>
+                            </input>
+                            {props.photo.length > 0 ? <button className="w-25  iks btn btn-danger d-flex position-absolute ml-5 pl-5"  onClick={() => props.setState({photo: ""})}><span className="w-50">&times;</span></button> : "" }
+                            <img src={API_PATH + "file/get/" +  props.photo} alt="" className="w-100 mt-3" />
 
-
-                        <AvField name="url" type="text" label="Url" value={props.url} required/>
-
-                        <AvField name="submenu" onChange={ () => props.updateState({submenu: !props.submenu})} type="checkbox" label="Is Submenu: "/>
-
-                        {
-                            props.submenu ?
-                                <AvField name="parentId" type="select" label="Parent Menu">
-                                    <option>Please choose</option>
-                                    {props.mainMenus.map((item, index) => {
-                                        return (
-                                            <option value={item.id}>{item.nameUz}</option>
-                                        )
-                                    })}
-                                </AvField> : ""
-                        }
                     </ModalBody>
                     <ModalFooter>
-                        <button type="submit" className="btn btn-success">Save</button>
-                        <button type="button" className="btn btn-secondary" onClick={ () => props.updateState({open: false})}>Cancel</button>
+                        <button type="submit" className="btn-success btn" >
+                            Save
+                        </button>
+                        <button type="button" className="btn-secondary btn" onClick={() => props.setState({open: false})}>
+                            Cansel
+                        </button>
                     </ModalFooter>
-                </AvForm>
-            </Modal>
-            <Modal isOpen={props.deleteModal} toggle={() => props.updateState({deleteModal: false})}>
-                <ModalBody>
-                    Are you sure to delete this menu?
-                </ModalBody>
-                <ModalFooter>
-                    <button type="button" className="btn btn-danger" onClick={props.deleteMenu}>Yes</button>
-                    <button type="button" className="btn btn-secondary">No</button>
-                </ModalFooter>
+                    </AvForm>
+                </Modal>
+                <Modal isOpen={props.deleteModal} toggle={() => props.setState({deleteModal: false})}>
+                    <ModalHeader>
+                            <h3>Rostdan xam o'chitmoqchiisiz ?</h3>
+                    </ModalHeader>
+                    <ModalFooter>
+                            <button type="button" className="btn btn-primary" onClick={() => props.deleteNews()}>Ha</button>
+                            <button type="button" className="btn btn-danger" onClick={() => props.setState({deleteModal: false})}>Yo'q</button>
 
-            </Modal>
-        </AdminLayout>
+                    </ModalFooter>
+                </Modal>
+                </AdminLayout> 
     );
 };
 
 const mapStateToProps = (state) => {
-    return {
-        open: state.menus.open,
-        url: state.menus.url,
-        submenu: state.menus.submenu,
-        menus: state.menus.menus,
-        deleteModal: state.menus.deleteModal,
-        selectedIndex: state.menus.selectedIndex,
-        selectedItem: state.menus.selectedItem,
-        mainMenus: state.menus.mainMenus
+    return{
+        open: state.news.open,
+        url: state.news.url,
+        subMenus: state.menus.subMenus,
+        photo: state.news.photo,
+        news : state.news.news,
+        selectedIndex: state.news.selectedIndex,
+        deleteModal : state.news.deleteModal,
     }
 }
 
-export default connect(mapStateToProps, {updateState, saveMenu, getMenus, deleteMenu, getMainMenus})(AdminNews);
+export default connect(mapStateToProps,{setState, getSubMenus, saveNews, savFile, getNews, deleteNews}) (AdminNews);

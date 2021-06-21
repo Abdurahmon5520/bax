@@ -1,0 +1,1 @@
+export const SET_STATE = "NEWS/SWR_STATE";

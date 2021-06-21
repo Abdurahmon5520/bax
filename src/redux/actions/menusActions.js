@@ -57,3 +57,10 @@ export const deleteMenu = () => (dispatch, getState) => {
             dispatch(updateState({deleteModal: false}));
         })
 };
+
+export const getSubMenus = () => (dispatch) => {
+    axios.get(API_PATH + "menu/subMenus")
+    .then((res) => {
+        dispatch(updateState({subMenus: res.data.data}))
+    })
+}
